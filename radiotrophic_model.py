@@ -42,7 +42,8 @@ def build_model():
         ('h_c','H+'), ('pi_c','Phosphate'), ('h2o_c','Water'), ('co2_c','CO2'),
         ('o2_c','O2'), ('o2s_c','Superoxide'), ('h2o2_c','H2O2'),
         ('melanin_c','Melanin'), ('tyr_c','Tyrosine'), ('dopa_c','L-DOPA'),
-        ('gthrd_c','GSH'), ('gthox_c','GSSG')
+        ('gthrd_c','GSH'), ('gthox_c','GSSG'),
+        ('oh_radical_c','Hydroxyl radical'), ('dna_damage_c','DNA damage marker')
     ]:
         m(mid, name)
     
@@ -152,11 +153,35 @@ def build_model():
     # Melanin absorbs ionizing radiation, energizes electrons,
     # drives NAD+ -> NADH with superoxide as byproduct
     # ============================================================
+    # Fix: melanin is consumed (radiation degrades polymer), not an invisible catalyst.
+    # Stoichiometry: 0.05 melanin consumed per NADH (slow degradation under irradiation).
+    # ROS: superoxide (0.3) + hydroxyl radical (0.1) from water radiolysis byproduct.
     R('RADIO', 'Melanin radiotrophic NADH generation', {
-        'nad_c':-1, 'h_c':-1,
-        'nadh_c':1, 'o2s_c':0.3   # ROS cost coefficient - TODO: validate from literature
+        'melanin_c':-0.05, 'nad_c':-1, 'h_c':-1,
+        'nadh_c':1, 'o2s_c':0.3, 'oh_radical_c':0.1
     }, (0, 50))
     
+    # ============================================================
+    # ROS DAMAGE PATHWAYS
+    # ============================================================
+    # Hydroxyl radicals cause DNA damage (Fenton chemistry)
+    # This creates a damage marker that MUST be repaired at ATP cost
+    R('FENTON', 'Hydroxyl radical DNA damage', {
+        'oh_radical_c':-1, 'dna_damage_c':1
+    })
+
+    # DNA base excision repair - costs ATP per lesion repaired
+    # Source: Lindahl & Barnes (2000) - BER requires ~4 ATP per lesion
+    R('BER', 'Base excision repair (ATP-dependent)', {
+        'dna_damage_c':-1, 'atp_c':-4, 'h2o_c':-4,
+        'adp_c':4, 'pi_c':4, 'h_c':4
+    })
+
+    # Hydroxyl radical scavenging (glutathione-mediated)
+    R('OH_SCAV', 'Hydroxyl radical scavenging by GSH', {
+        'oh_radical_c':-1, 'gthrd_c':-1, 'gthox_c':0.5, 'h2o_c':1
+    })
+
     # ============================================================
     # ROS DEFENSE - NATIVE HUMAN
     # ============================================================
@@ -171,12 +196,13 @@ def build_model():
     # ROS DEFENSE - CROSS-SPECIES ENGINEERED
     # ============================================================
     
-    # Tardigrade Dsup protein - directly shields DNA from hydroxyl radicals
+    # Tardigrade Dsup protein - binds chromatin and shields DNA from hydroxyl radicals
     # Source: Hashimoto et al. (2016) Nature Communications
     # Demonstrated 40% reduction in radiation-induced DNA damage in human cells
-    R('DSUP', 'Tardigrade Dsup DNA protection', {
-        'o2s_c':-2, 'h_c':-2,
-        'h2o2_c':0.5, 'o2_c':0.5, 'h2o_c':0.5  # More efficient than SOD
+    # Modeled as: Dsup intercepts hydroxyl radicals before they reach DNA,
+    # converting them to water without the ATP cost of DNA repair
+    R('DSUP', 'Tardigrade Dsup DNA shielding', {
+        'oh_radical_c':-1, 'h_c':-1, 'h2o_c':1
     })
     
     # Deinococcus radiodurans Mn-antioxidant complex
@@ -225,6 +251,7 @@ def disable_engineered(model):
     model.reactions.get_by_id('DSUP').upper_bound = 0
     model.reactions.get_by_id('MNAOX').upper_bound = 0
     model.reactions.get_by_id('NRF2').upper_bound = 0
+    model.reactions.get_by_id('OH_SCAV').upper_bound = 1000  # native GSH scavenging stays on
 
 
 # ============================================================
@@ -316,7 +343,11 @@ def run_all_experiments():
                     'dsup': round(sol.fluxes['DSUP'], 2),
                     'catalase': round(sol.fluxes['CATc'], 2),
                     'mn_aox': round(sol.fluxes['MNAOX'], 2),
-                    'ros_generated': round(sol.fluxes['RADIO'] * 0.3, 2)
+                    'dna_repair': round(sol.fluxes['BER'], 2),
+                    'oh_scavenged': round(sol.fluxes['OH_SCAV'], 2),
+                    'melanin_consumed': round(sol.fluxes['RADIO'] * 0.05, 2),
+                    'superoxide_generated': round(sol.fluxes['RADIO'] * 0.3, 2),
+                    'oh_generated': round(sol.fluxes['RADIO'] * 0.1, 2)
                 })
     
     results['dose_response'] = pd.DataFrame(rows)
@@ -325,15 +356,16 @@ def run_all_experiments():
     # EXPERIMENT 4: Defense system ablation (glucose=5, radio=50)
     # ----------------------------------------------------------
     configs = [
-        ("All defenses ON",      {'RADIO':50,'DSUP':1000,'MNAOX':1000,'NRF2':1000,'SODc':1000,'CATc':1000,'GPX':1000,'GR':1000}),
-        ("No Dsup",              {'RADIO':50,'DSUP':0,   'MNAOX':1000,'NRF2':1000,'SODc':1000,'CATc':1000,'GPX':1000,'GR':1000}),
-        ("No Mn-AOX",            {'RADIO':50,'DSUP':1000,'MNAOX':0,   'NRF2':1000,'SODc':1000,'CATc':1000,'GPX':1000,'GR':1000}),
-        ("No Nrf2",              {'RADIO':50,'DSUP':1000,'MNAOX':1000,'NRF2':0,   'SODc':1000,'CATc':1000,'GPX':1000,'GR':1000}),
-        ("No SOD",               {'RADIO':50,'DSUP':1000,'MNAOX':1000,'NRF2':1000,'SODc':0,   'CATc':1000,'GPX':1000,'GR':1000}),
-        ("No Catalase",          {'RADIO':50,'DSUP':1000,'MNAOX':1000,'NRF2':1000,'SODc':1000,'CATc':0,   'GPX':1000,'GR':1000}),
-        ("Only native defenses", {'RADIO':50,'DSUP':0,   'MNAOX':0,   'NRF2':0,   'SODc':1000,'CATc':1000,'GPX':1000,'GR':1000}),
-        ("Only engineered",      {'RADIO':50,'DSUP':1000,'MNAOX':1000,'NRF2':1000,'SODc':0,   'CATc':0,   'GPX':0,   'GR':0}),
-        ("No defenses",          {'RADIO':50,'DSUP':0,   'MNAOX':0,   'NRF2':0,   'SODc':0,   'CATc':0,   'GPX':0,   'GR':0}),
+        ("All defenses ON",      {'RADIO':50,'DSUP':1000,'MNAOX':1000,'NRF2':1000,'SODc':1000,'CATc':1000,'GPX':1000,'GR':1000,'OH_SCAV':1000}),
+        ("No Dsup",              {'RADIO':50,'DSUP':0,   'MNAOX':1000,'NRF2':1000,'SODc':1000,'CATc':1000,'GPX':1000,'GR':1000,'OH_SCAV':1000}),
+        ("No Mn-AOX",            {'RADIO':50,'DSUP':1000,'MNAOX':0,   'NRF2':1000,'SODc':1000,'CATc':1000,'GPX':1000,'GR':1000,'OH_SCAV':1000}),
+        ("No Nrf2",              {'RADIO':50,'DSUP':1000,'MNAOX':1000,'NRF2':0,   'SODc':1000,'CATc':1000,'GPX':1000,'GR':1000,'OH_SCAV':1000}),
+        ("No SOD",               {'RADIO':50,'DSUP':1000,'MNAOX':1000,'NRF2':1000,'SODc':0,   'CATc':1000,'GPX':1000,'GR':1000,'OH_SCAV':1000}),
+        ("No Catalase",          {'RADIO':50,'DSUP':1000,'MNAOX':1000,'NRF2':1000,'SODc':1000,'CATc':0,   'GPX':1000,'GR':1000,'OH_SCAV':1000}),
+        ("No OH scavenging",     {'RADIO':50,'DSUP':1000,'MNAOX':1000,'NRF2':1000,'SODc':1000,'CATc':1000,'GPX':1000,'GR':1000,'OH_SCAV':0}),
+        ("Only native defenses", {'RADIO':50,'DSUP':0,   'MNAOX':0,   'NRF2':0,   'SODc':1000,'CATc':1000,'GPX':1000,'GR':1000,'OH_SCAV':1000}),
+        ("Only engineered",      {'RADIO':50,'DSUP':1000,'MNAOX':1000,'NRF2':1000,'SODc':0,   'CATc':0,   'GPX':0,   'GR':0,  'OH_SCAV':0}),
+        ("No defenses",          {'RADIO':50,'DSUP':0,   'MNAOX':0,   'NRF2':0,   'SODc':0,   'CATc':0,   'GPX':0,   'GR':0,  'OH_SCAV':0}),
     ]
     
     rows = []
@@ -392,12 +424,11 @@ if __name__ == '__main__':
         print(df.to_string(index=False))
     
     # Save results
-    os.makedirs('results', exist_ok=True)
     for name, df in results.items():
-        df.to_csv(f'results/{name}.csv', index=False)
+        df.to_csv(f'{name}.csv', index=False)
     
     # Save model
     cobra.io.save_json_model(model, 'radiotrophic_cell_model.json')
     
-    print("\n\nResults saved to results/ directory")
+    print("\n\nResults saved to current directory")
     print("Model saved to radiotrophic_cell_model.json")
