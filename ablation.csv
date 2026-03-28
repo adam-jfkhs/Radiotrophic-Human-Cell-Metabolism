@@ -1,0 +1,10 @@
+config,atp,radio_flux,status
+All defenses ON,168.59,50.0,optimal
+No Dsup,168.59,50.0,optimal
+No Mn-AOX,168.59,50.0,optimal
+No Nrf2,168.59,50.0,optimal
+No SOD,140.07,50.0,optimal
+No Catalase,168.59,50.0,optimal
+Only native defenses,168.59,50.0,optimal
+Only engineered,140.07,50.0,optimal
+No defenses,111.39,0.0,optimal
