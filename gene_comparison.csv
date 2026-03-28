@@ -1,0 +1,5 @@
+gene,function,human_cell_tested,feasibility,key_reference,challenge
+Dsup (tardigrade),DNA protection from OH radicals,True,HIGH,Hashimoto et al. 2016,
+Mn-antioxidant system (D. radiodurans),Protein protection via Mn2+ complexes,False,MEDIUM,Daly et al. 2004,"Requires high intracellular Mn2+, multiple gene products"
+Nrf2 overexpression (naked mole rat-like),Enhanced antioxidant gene expression,True,HIGH,Lewis et al. 2015,Nrf2 is endogenous; overexpression may be oncogenic
+Melanin synthesis (tyrosinase + melanosomal genes),Radiation energy capture,True,HIGH,Human melanocytes already produce melanin,Requires melanosome-like compartments in non-melanocyte cells

@@ -674,11 +674,11 @@
 "name":"Melanin radiotrophic NADH generation",
 "metabolites":{
 "h_c":-1,
-"melanin_c":-0.05,
+"melanin_c":-0.02,
 "nad_c":-1,
 "nadh_c":1,
-"o2s_c":0.3,
-"oh_radical_c":0.1
+"o2s_c":0.28,
+"oh_radical_c":0.24
 },
 "lower_bound":0,
 "upper_bound":50,
