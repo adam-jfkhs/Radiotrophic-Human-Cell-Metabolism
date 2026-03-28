@@ -1,11 +1,11 @@
-config,atp,radio_flux,status
-All defenses ON,117.81,25.0,optimal
-No Dsup,117.81,25.0,optimal
-No Mn-AOX,117.81,25.0,optimal
-No Nrf2,117.81,25.0,optimal
-No SOD,111.39,0.0,optimal
-No Catalase,117.81,25.0,optimal
-No OH scavenging,117.81,25.0,optimal
-Only native defenses,117.81,25.0,optimal
-Only engineered,111.39,0.0,optimal
-No defenses,111.39,0.0,optimal
+config,atp,radio_flux,sod,catalase,gpx,gr,dsup,mn_aox,nrf2,oh_scav,dna_repair,status
+All defenses ON,117.81,25.0,3.75,2.6,0.0,0.0,2.5,0.0,0.0,0.0,0.0,optimal
+No Dsup,117.81,25.0,3.75,2.6,0.0,0.0,0.0,0.0,1.25,2.5,0.0,optimal
+No Mn-AOX,117.81,25.0,3.75,2.6,0.0,0.0,2.5,0.0,0.0,0.0,0.0,optimal
+No Nrf2,117.81,25.0,3.75,2.6,0.0,0.0,2.5,0.0,0.0,0.0,0.0,optimal
+No SOD,111.39,0.0,0.0,0.09,0.0,0.0,0.0,0.0,0.0,0.0,0.0,optimal
+No Catalase,117.81,25.0,3.75,0.0,0.0,0.0,2.5,2.5,0.0,0.0,0.0,optimal
+No OH scavenging,117.81,25.0,3.75,0.0,0.0,0.0,2.5,2.5,0.0,0.0,0.0,optimal
+Only native defenses,117.81,25.0,3.75,2.5,0.0,1.25,0.0,0.0,0.0,2.5,0.0,optimal
+Only engineered,111.39,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,optimal
+No defenses,111.39,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,optimal

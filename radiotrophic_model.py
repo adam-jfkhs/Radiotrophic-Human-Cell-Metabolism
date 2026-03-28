@@ -184,13 +184,25 @@ def build_model():
 
     # ============================================================
     # ROS DEFENSE - NATIVE HUMAN
+    # Capacity-constrained to realistic cellular Vmax values.
+    # Native enzyme pools are finite; radiotrophic ROS load can
+    # exceed their capacity, making engineered defenses essential.
     # ============================================================
-    R('SODc', 'Superoxide dismutase (cytosolic)',  {'o2s_c':-2, 'h_c':-2, 'h2o2_c':1, 'o2_c':1})
-    R('SODm', 'Superoxide dismutase (mito)',       {'o2s_m':-2, 'h_m':-2, 'h2o2_m':1, 'o2_m':1})
-    R('CATc', 'Catalase (cytosolic)',              {'h2o2_c':-2, 'h2o_c':2, 'o2_c':1})
+    # Native enzyme capacities are capped to represent finite cellular pools.
+    # At basal ETC ROS (~0.2 flux), these caps are ample. Under radiotrophic
+    # load (7.5 superoxide + 2.5 OH at flux=25), the system operates near
+    # capacity, making engineered defenses essential for robustness.
+    #
+    # SOD1 (Cu/Zn): cap=4. At radio flux=25, SOD needs 3.75 → 94% saturated.
+    R('SODc', 'Superoxide dismutase (cytosolic)',  {'o2s_c':-2, 'h_c':-2, 'h2o2_c':1, 'o2_c':1}, (0, 4))
+    R('SODm', 'Superoxide dismutase (mito)',       {'o2s_m':-2, 'h_m':-2, 'h2o2_m':1, 'o2_m':1}, (0, 3))
+    # Catalase: cap=3. Peroxisomal, limited cytosolic availability.
+    R('CATc', 'Catalase (cytosolic)',              {'h2o2_c':-2, 'h2o_c':2, 'o2_c':1}, (0, 3))
     R('CATm', 'Catalase (mitochondrial)',          {'h2o2_m':-2, 'h2o_m':2, 'o2_m':1})
-    R('GPX',  'Glutathione peroxidase',            {'h2o2_c':-1, 'gthrd_c':-2, 'h2o_c':2, 'gthox_c':1})
-    R('GR',   'Glutathione reductase',             {'gthox_c':-1, 'nadh_c':-1, 'h_c':-1, 'gthrd_c':2, 'nad_c':1})
+    # GPX1: selenium-dependent, limited by GSH pool turnover. Cap=3.
+    R('GPX',  'Glutathione peroxidase',            {'h2o2_c':-1, 'gthrd_c':-2, 'h2o_c':2, 'gthox_c':1}, (0, 3))
+    # GR: NADPH-dependent (NADH proxy), limited by reductase expression. Cap=2.
+    R('GR',   'Glutathione reductase',             {'gthox_c':-1, 'nadh_c':-1, 'h_c':-1, 'gthrd_c':2, 'nad_c':1}, (0, 2))
     
     # ============================================================
     # ROS DEFENSE - CROSS-SPECIES ENGINEERED
@@ -355,17 +367,19 @@ def run_all_experiments():
     # ----------------------------------------------------------
     # EXPERIMENT 4: Defense system ablation (glucose=5, radio=50)
     # ----------------------------------------------------------
+    # Note: native enzyme caps set during build (SODc=4, CATc=3, GPX=3, GR=2).
+    # Ablation uses those defaults; only engineered defenses and knockouts varied.
     configs = [
-        ("All defenses ON",      {'RADIO':50,'DSUP':1000,'MNAOX':1000,'NRF2':1000,'SODc':1000,'CATc':1000,'GPX':1000,'GR':1000,'OH_SCAV':1000}),
-        ("No Dsup",              {'RADIO':50,'DSUP':0,   'MNAOX':1000,'NRF2':1000,'SODc':1000,'CATc':1000,'GPX':1000,'GR':1000,'OH_SCAV':1000}),
-        ("No Mn-AOX",            {'RADIO':50,'DSUP':1000,'MNAOX':0,   'NRF2':1000,'SODc':1000,'CATc':1000,'GPX':1000,'GR':1000,'OH_SCAV':1000}),
-        ("No Nrf2",              {'RADIO':50,'DSUP':1000,'MNAOX':1000,'NRF2':0,   'SODc':1000,'CATc':1000,'GPX':1000,'GR':1000,'OH_SCAV':1000}),
-        ("No SOD",               {'RADIO':50,'DSUP':1000,'MNAOX':1000,'NRF2':1000,'SODc':0,   'CATc':1000,'GPX':1000,'GR':1000,'OH_SCAV':1000}),
-        ("No Catalase",          {'RADIO':50,'DSUP':1000,'MNAOX':1000,'NRF2':1000,'SODc':1000,'CATc':0,   'GPX':1000,'GR':1000,'OH_SCAV':1000}),
-        ("No OH scavenging",     {'RADIO':50,'DSUP':1000,'MNAOX':1000,'NRF2':1000,'SODc':1000,'CATc':1000,'GPX':1000,'GR':1000,'OH_SCAV':0}),
-        ("Only native defenses", {'RADIO':50,'DSUP':0,   'MNAOX':0,   'NRF2':0,   'SODc':1000,'CATc':1000,'GPX':1000,'GR':1000,'OH_SCAV':1000}),
-        ("Only engineered",      {'RADIO':50,'DSUP':1000,'MNAOX':1000,'NRF2':1000,'SODc':0,   'CATc':0,   'GPX':0,   'GR':0,  'OH_SCAV':0}),
-        ("No defenses",          {'RADIO':50,'DSUP':0,   'MNAOX':0,   'NRF2':0,   'SODc':0,   'CATc':0,   'GPX':0,   'GR':0,  'OH_SCAV':0}),
+        ("All defenses ON",      {'RADIO':50,'DSUP':1000,'MNAOX':1000,'NRF2':1000,'SODc':4, 'CATc':3, 'GPX':3, 'GR':2, 'OH_SCAV':1000}),
+        ("No Dsup",              {'RADIO':50,'DSUP':0,   'MNAOX':1000,'NRF2':1000,'SODc':4, 'CATc':3, 'GPX':3, 'GR':2, 'OH_SCAV':1000}),
+        ("No Mn-AOX",            {'RADIO':50,'DSUP':1000,'MNAOX':0,   'NRF2':1000,'SODc':4, 'CATc':3, 'GPX':3, 'GR':2, 'OH_SCAV':1000}),
+        ("No Nrf2",              {'RADIO':50,'DSUP':1000,'MNAOX':1000,'NRF2':0,   'SODc':4, 'CATc':3, 'GPX':3, 'GR':2, 'OH_SCAV':1000}),
+        ("No SOD",               {'RADIO':50,'DSUP':1000,'MNAOX':1000,'NRF2':1000,'SODc':0, 'CATc':3, 'GPX':3, 'GR':2, 'OH_SCAV':1000}),
+        ("No Catalase",          {'RADIO':50,'DSUP':1000,'MNAOX':1000,'NRF2':1000,'SODc':4, 'CATc':0, 'GPX':3, 'GR':2, 'OH_SCAV':1000}),
+        ("No OH scavenging",     {'RADIO':50,'DSUP':1000,'MNAOX':1000,'NRF2':1000,'SODc':4, 'CATc':3, 'GPX':3, 'GR':2, 'OH_SCAV':0}),
+        ("Only native defenses", {'RADIO':50,'DSUP':0,   'MNAOX':0,   'NRF2':0,   'SODc':4, 'CATc':3, 'GPX':3, 'GR':2, 'OH_SCAV':1000}),
+        ("Only engineered",      {'RADIO':50,'DSUP':1000,'MNAOX':1000,'NRF2':1000,'SODc':0, 'CATc':0, 'GPX':0, 'GR':0, 'OH_SCAV':0}),
+        ("No defenses",          {'RADIO':50,'DSUP':0,   'MNAOX':0,   'NRF2':0,   'SODc':0, 'CATc':0, 'GPX':0, 'GR':0, 'OH_SCAV':0}),
     ]
     
     rows = []
@@ -375,10 +389,28 @@ def run_all_experiments():
             for rid, ub in cfg.items():
                 model.reactions.get_by_id(rid).upper_bound = ub
             sol = model.optimize()
-            atp = sol.objective_value if sol.status == 'optimal' else 0
-            rf = sol.fluxes.get('RADIO', 0) if sol.status == 'optimal' else 0
-            rows.append({'config': label, 'atp': round(atp, 2), 'radio_flux': round(rf, 2), 'status': sol.status})
-    
+            if sol.status == 'optimal':
+                f = sol.fluxes
+                rows.append({
+                    'config': label, 'atp': round(sol.objective_value, 2),
+                    'radio_flux': round(f.get('RADIO', 0), 2),
+                    'sod': round(f.get('SODc', 0), 2),
+                    'catalase': round(f.get('CATc', 0), 2),
+                    'gpx': round(f.get('GPX', 0), 2),
+                    'gr': round(f.get('GR', 0), 2),
+                    'dsup': round(f.get('DSUP', 0), 2),
+                    'mn_aox': round(f.get('MNAOX', 0), 2),
+                    'nrf2': round(f.get('NRF2', 0), 2),
+                    'oh_scav': round(f.get('OH_SCAV', 0), 2),
+                    'dna_repair': round(f.get('BER', 0), 2),
+                    'status': sol.status
+                })
+            else:
+                rows.append({'config': label, 'atp': 0, 'radio_flux': 0,
+                             'sod':0,'catalase':0,'gpx':0,'gr':0,'dsup':0,
+                             'mn_aox':0,'nrf2':0,'oh_scav':0,'dna_repair':0,
+                             'status': sol.status})
+
     results['ablation'] = pd.DataFrame(rows)
     
     # ----------------------------------------------------------
@@ -401,7 +433,47 @@ def run_all_experiments():
         rows.append({'glucose': glc, 'o2': o2, 'atp_normal': round(a1,2), 'atp_radio': round(a2,2), 'pct_boost': round(pct,1)})
     
     results['combined_stress'] = pd.DataFrame(rows)
-    
+
+    # ----------------------------------------------------------
+    # EXPERIMENT 6: ROS coefficient sensitivity analysis
+    # Rebuilds the model per iteration to properly vary the
+    # superoxide:NADH ratio (the most uncertain parameter).
+    # Uses generous O2 supply to isolate ROS cost from O2 budget effects.
+    # ----------------------------------------------------------
+    rows = []
+    for ros_coeff in [0.05, 0.1, 0.2, 0.3, 0.5, 0.7, 1.0, 1.5, 2.0]:
+        # Build fresh model with modified ROS coefficient
+        m_sens = build_model()
+        radio_rxn = m_sens.reactions.get_by_id('RADIO')
+        o2s_met = [mt for mt in radio_rxn.metabolites if 'o2s_c' in mt.id][0]
+        radio_rxn.add_metabolites({o2s_met: ros_coeff - 0.3})  # delta from default
+
+        # Generous O2 to isolate ROS cost from O2 budget artifact
+        m_sens.reactions.get_by_id('EX_o2').lower_bound = -100
+        m_sens.reactions.get_by_id('EX_glc').lower_bound = -5
+
+        sol = m_sens.optimize()
+        if sol.status == 'optimal':
+            rf = sol.fluxes['RADIO']
+            # Normal cell baseline (same O2 generosity)
+            disable_engineered(m_sens)
+            s_norm = m_sens.optimize()
+            atp_norm = s_norm.objective_value if s_norm.status == 'optimal' else 0
+
+            rows.append({
+                'ros_coefficient': ros_coeff,
+                'atp_radio': round(sol.objective_value, 2),
+                'atp_normal': round(atp_norm, 2),
+                'radio_flux': round(rf, 2),
+                'net_gain': round(sol.objective_value - atp_norm, 2),
+                'superoxide_produced': round(rf * ros_coeff, 2),
+                'sod_flux': round(sol.fluxes['SODc'], 2),
+                'dsup_flux': round(sol.fluxes['DSUP'], 2),
+                'dna_repair': round(sol.fluxes['BER'], 2)
+            })
+
+    results['ros_sensitivity'] = pd.DataFrame(rows)
+
     return results
 
 
