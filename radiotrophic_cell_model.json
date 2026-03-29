@@ -673,12 +673,16 @@
 "id":"RADIO",
 "name":"Melanin radiotrophic NADH generation",
 "metabolites":{
+"adp_c":0.5,
+"atp_c":-0.5,
+"h2o_c":-0.5,
 "h_c":-1,
 "melanin_c":-0.02,
 "nad_c":-1,
 "nadh_c":1,
 "o2s_c":0.28,
-"oh_radical_c":0.24
+"oh_radical_c":0.24,
+"pi_c":0.5
 },
 "lower_bound":0,
 "upper_bound":50,
@@ -836,6 +840,29 @@
 },
 "lower_bound":0,
 "upper_bound":1000,
+"gene_reaction_rule":""
+},
+{
+"id":"SOD2",
+"name":"Overexpressed MnSOD2 (engineered)",
+"metabolites":{
+"h2o2_c":1,
+"h_c":-2,
+"o2_c":1,
+"o2s_c":-2
+},
+"lower_bound":0,
+"upper_bound":0,
+"gene_reaction_rule":""
+},
+{
+"id":"EX_mel",
+"name":"Synthetic melanin nanoparticle loading",
+"metabolites":{
+"melanin_c":1
+},
+"lower_bound":0,
+"upper_bound":0,
 "gene_reaction_rule":""
 },
 {
