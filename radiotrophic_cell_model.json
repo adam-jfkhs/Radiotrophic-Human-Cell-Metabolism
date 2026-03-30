@@ -241,6 +241,16 @@
 "compartment":"c"
 },
 {
+"id":"oh_radical_c",
+"name":"Hydroxyl radical",
+"compartment":"c"
+},
+{
+"id":"dna_damage_c",
+"name":"DNA damage marker",
+"compartment":"c"
+},
+{
 "id":"gthrd_c",
 "name":"GSH",
 "compartment":"c"
@@ -663,13 +673,58 @@
 "id":"RADIO",
 "name":"Melanin radiotrophic NADH generation",
 "metabolites":{
+"adp_c":0.5,
+"atp_c":-0.5,
+"h2o_c":-0.5,
 "h_c":-1,
+"melanin_c":-0.02,
 "nad_c":-1,
 "nadh_c":1,
-"o2s_c":0.3
+"o2s_c":0.28,
+"oh_radical_c":0.24,
+"pi_c":0.5
 },
 "lower_bound":0,
 "upper_bound":50,
+"gene_reaction_rule":""
+},
+{
+"id":"FENTON",
+"name":"Hydroxyl radical DNA damage",
+"metabolites":{
+"dna_damage_c":1,
+"oh_radical_c":-1
+},
+"lower_bound":0,
+"upper_bound":1000,
+"gene_reaction_rule":""
+},
+{
+"id":"BER",
+"name":"Base excision repair (ATP-dependent)",
+"metabolites":{
+"adp_c":4,
+"atp_c":-4,
+"dna_damage_c":-1,
+"h2o_c":-4,
+"h_c":4,
+"pi_c":4
+},
+"lower_bound":0,
+"upper_bound":1000,
+"gene_reaction_rule":""
+},
+{
+"id":"OH_SCAV",
+"name":"Hydroxyl radical scavenging by GSH",
+"metabolites":{
+"gthox_c":0.5,
+"gthrd_c":-1,
+"h2o_c":1,
+"oh_radical_c":-1
+},
+"lower_bound":0,
+"upper_bound":1000,
 "gene_reaction_rule":""
 },
 {
@@ -682,7 +737,7 @@
 "o2s_c":-2
 },
 "lower_bound":0,
-"upper_bound":1000,
+"upper_bound":4,
 "gene_reaction_rule":""
 },
 {
@@ -695,7 +750,7 @@
 "o2s_m":-2
 },
 "lower_bound":0,
-"upper_bound":1000,
+"upper_bound":3,
 "gene_reaction_rule":""
 },
 {
@@ -707,7 +762,7 @@
 "o2_c":1
 },
 "lower_bound":0,
-"upper_bound":1000,
+"upper_bound":3,
 "gene_reaction_rule":""
 },
 {
@@ -732,7 +787,7 @@
 "h2o_c":2
 },
 "lower_bound":0,
-"upper_bound":1000,
+"upper_bound":3,
 "gene_reaction_rule":""
 },
 {
@@ -746,18 +801,16 @@
 "nadh_c":-1
 },
 "lower_bound":0,
-"upper_bound":1000,
+"upper_bound":2,
 "gene_reaction_rule":""
 },
 {
 "id":"DSUP",
-"name":"Tardigrade Dsup DNA protection",
+"name":"Tardigrade Dsup DNA shielding",
 "metabolites":{
-"h2o2_c":0.5,
-"h2o_c":0.5,
-"h_c":-2,
-"o2_c":0.5,
-"o2s_c":-2
+"h2o_c":1,
+"h_c":-1,
+"oh_radical_c":-1
 },
 "lower_bound":0,
 "upper_bound":1000,
@@ -787,6 +840,29 @@
 },
 "lower_bound":0,
 "upper_bound":1000,
+"gene_reaction_rule":""
+},
+{
+"id":"SOD2",
+"name":"Overexpressed MnSOD2 (engineered)",
+"metabolites":{
+"h2o2_c":1,
+"h_c":-2,
+"o2_c":1,
+"o2s_c":-2
+},
+"lower_bound":0,
+"upper_bound":0,
+"gene_reaction_rule":""
+},
+{
+"id":"EX_mel",
+"name":"Synthetic melanin nanoparticle loading",
+"metabolites":{
+"melanin_c":1
+},
+"lower_bound":0,
+"upper_bound":0,
 "gene_reaction_rule":""
 },
 {
